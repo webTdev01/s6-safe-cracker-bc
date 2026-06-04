@@ -129,10 +129,6 @@ void generateNewGame() {
 }
 
 void updateGame(int32_t val) {
-    if (!sensor_ok) {
-        lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
-        return;
-    }
     lv_arc_set_value(arc_cadran, val);
     float rad = val * (float)M_PI / 180.0f;
     needle_pts[1].x = (lv_value_precise_t)(115.0f + 52.0f * sinf(rad));
@@ -339,7 +335,7 @@ void createHomeScreen() {
     lv_obj_set_style_border_width(warn, 0, 0);
     lv_obj_set_style_radius(warn, 0, 0);
     lv_obj_t *serial = lv_label_create(screen_home);
-    lv_label_set_text(serial, "IUT-CACHAN \xC2\xB7 2025");
+    lv_label_set_text(serial, "   IUT-CACHAN \xC2\xB7 2025");
     lv_obj_set_style_text_font(serial, FONT14, 0);
     lv_obj_set_style_text_color(serial, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(serial, LV_ALIGN_BOTTOM_RIGHT, -12, -10);
@@ -739,13 +735,12 @@ void mySetup() {
     uint8_t stuck_count = 0;
     for (int i = 0; i < 5; i++) {
         delay(2);
-        if ((int32_t)(readAS5047P() * 360.0f / 16384.0f) == 359) stuck_count++;
+        if (readAS5047P() == 0x3FFF) stuck_count++;
     }
     sensor_ok = (stuck_count < 5);
     const char *sensor_status = sensor_ok ? "OK" : "FAIL";
     static char boot_l2[80], boot_l3[120], boot_l4[160], boot_l5[200], boot_l6[220];
-    snprintf(boot_l2, sizeof(boot_l2),
-        "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... %s\n", sensor_status);
+    snprintf(boot_l2, sizeof(boot_l2), "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... %s\n", sensor_status);
     snprintf(boot_l3, sizeof(boot_l3), "%s> GENERATION COMBINAISON.... OK\n", boot_l2);
     snprintf(boot_l4, sizeof(boot_l4), "%s> INTERFACE LVGL............. OK\n", boot_l3);
     snprintf(boot_l5, sizeof(boot_l5), "%s\n>>> %s", boot_l4,
@@ -773,7 +768,6 @@ void myTask(void *pvParameters) {
     while (1) {
         uint16_t raw = readAS5047P();
         int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
-        Serial.println(val);
 
         // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
         // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
