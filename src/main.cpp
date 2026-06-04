@@ -560,7 +560,8 @@ static void opa_cb(void *var, int32_t v) {
     lv_obj_set_style_opa((lv_obj_t *)var, (lv_opa_t)v, 0);
 }
 
-static void anim_timeline_done_cb(lv_anim_timeline_t *tl) {
+static void victory_timeline_done_cb(lv_anim_t *a) {
+    lv_anim_timeline_t *tl = (lv_anim_timeline_t *)lv_anim_get_user_data(a);
     lv_anim_timeline_delete(tl);
 }
 
@@ -614,10 +615,11 @@ void playVictoryAnimation() {
     lv_anim_set_exec_cb(&a, opa_cb);
     lv_anim_set_values(&a, 0, 255);
     lv_anim_set_duration(&a, 500);
+    lv_anim_set_user_data(&a, tl);
+    lv_anim_set_completed_cb(&a, victory_timeline_done_cb);
     lv_anim_timeline_add(tl, 1850, &a);
 
     lv_anim_timeline_start(tl);
-    lv_anim_timeline_set_completed_cb(tl, anim_timeline_done_cb);
 }
 
 void createVictoryScreen() {
