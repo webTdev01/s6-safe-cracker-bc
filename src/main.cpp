@@ -63,12 +63,15 @@ static lv_obj_t *v_cell_bg[3]  = {NULL, NULL, NULL};
 static lv_obj_t *v_btn_play    = NULL;
 static lv_obj_t *v_btn_home    = NULL;
 static lv_obj_t *v_flash_obj   = NULL;
+static lv_obj_t *lbl_sensor_error = NULL;
 static lv_point_precise_t needle_pts[2] = {{115, 115}, {115, 60}};
 
 static int32_t  secret_angles[3]  = {90, 180, 270};
 static int32_t  current_step      = 0;
 static uint32_t hold_timer        = 0;
 static bool     is_unlocked       = false;
+static bool sensor_ok        = true;
+static bool sensor_was_ok    = true;
 static const int32_t TOLERANCE_DEG = 10;
 static const int32_t CLOSE_DEG     = 30;
 
@@ -126,6 +129,10 @@ void generateNewGame() {
 }
 
 void updateGame(int32_t val) {
+    if (!sensor_ok) {
+        lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
     lv_arc_set_value(arc_cadran, val);
     float rad = val * (float)M_PI / 180.0f;
     needle_pts[1].x = (lv_value_precise_t)(115.0f + 52.0f * sinf(rad));
@@ -200,14 +207,7 @@ static void home_arc_pulse_cb(void *var, int32_t v) {
     lv_arc_set_value((lv_obj_t *)var, v);
 }
 
-static const char *boot_lines[] = {
-    "SAFE CRACKER v1.0\n",
-    "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n",
-    "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... OK\n",
-    "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... OK\n> GENERATION COMBINAISON.... OK\n",
-    "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... OK\n> GENERATION COMBINAISON.... OK\n> INTERFACE LVGL............. OK\n",
-    "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... OK\n> GENERATION COMBINAISON.... OK\n> INTERFACE LVGL............. OK\n\n>>> SYSTEME PRET"
-};
+static const char *boot_lines[6];
 
 static void boot_timer_cb(lv_timer_t *t) {
     boot_step++;
@@ -556,6 +556,13 @@ void createGameScreen() {
     lv_obj_set_style_text_font(label_angle, FONT14, 0);
     lv_obj_set_style_text_color(label_angle, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(label_angle, LV_ALIGN_CENTER, 0, 0);
+    lbl_sensor_error = lv_label_create(screen_game);
+    lv_label_set_text(lbl_sensor_error, "⚠  CAPTEUR NON DETECTE\nVerifier connexion J1");
+    lv_obj_set_style_text_font(lbl_sensor_error, FONT14, 0);
+    lv_obj_set_style_text_color(lbl_sensor_error, lv_color_hex(0xFF4444), 0);
+    lv_obj_set_style_text_align(lbl_sensor_error, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(lbl_sensor_error, LV_ALIGN_CENTER, 0, 30);
+    lv_obj_add_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
 }
 
 static void opa_cb(void *var, int32_t v) {
@@ -725,10 +732,30 @@ void mySetup() {
     pinMode(AS5047P_CS,   OUTPUT);
     pinMode(AS5047P_SCK,  OUTPUT);
     pinMode(AS5047P_MOSI, OUTPUT);
-    pinMode(AS5047P_MISO, INPUT);
+    pinMode(AS5047P_MISO, INPUT_PULLUP);
     digitalWrite(AS5047P_CS,  HIGH);
     digitalWrite(AS5047P_SCK, LOW);
     delay(10);
+    uint8_t stuck_count = 0;
+    for (int i = 0; i < 5; i++) {
+        delay(2);
+        if ((int32_t)(readAS5047P() * 360.0f / 16384.0f) == 359) stuck_count++;
+    }
+    sensor_ok = (stuck_count < 5);
+    const char *sensor_status = sensor_ok ? "OK" : "FAIL";
+    static char boot_l2[80], boot_l3[120], boot_l4[160], boot_l5[200], boot_l6[220];
+    snprintf(boot_l2, sizeof(boot_l2),
+        "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... %s\n", sensor_status);
+    snprintf(boot_l3, sizeof(boot_l3), "%s> GENERATION COMBINAISON.... OK\n", boot_l2);
+    snprintf(boot_l4, sizeof(boot_l4), "%s> INTERFACE LVGL............. OK\n", boot_l3);
+    snprintf(boot_l5, sizeof(boot_l5), "%s\n>>> %s", boot_l4,
+        sensor_ok ? "SYSTEME PRET" : "ERREUR CAPTEUR — VERIFIER CONNEXION");
+    boot_lines[0] = "SAFE CRACKER v1.0\n";
+    boot_lines[1] = "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n";
+    boot_lines[2] = boot_l2;
+    boot_lines[3] = boot_l3;
+    boot_lines[4] = boot_l4;
+    boot_lines[5] = boot_l5;
     randomSeed(analogRead(A0) + millis());
     createBootScreen();
     createHomeScreen();
@@ -747,8 +774,24 @@ void myTask(void *pvParameters) {
         uint16_t raw = readAS5047P();
         int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
         Serial.println(val);
+
+        // Hot-plug detection: 5 consecutive reads of 359 = sensor absent
+        static uint8_t stuck_count = 0;
+        if (val == 359) { if (stuck_count < 5) stuck_count++; }
+        else            { stuck_count = 0; }
+        bool now_ok = (stuck_count < 5);
+
+        if (now_ok != sensor_was_ok) {
+            sensor_ok      = now_ok;
+            sensor_was_ok  = now_ok;
+            lvglLock(portMAX_DELAY);
+                if (sensor_ok) lv_obj_add_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+                else           lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+            lvglUnlock();
+        }
+
         lvglLock(portMAX_DELAY);
-            updateGame(val);
+            if (sensor_ok) updateGame(val);
         lvglUnlock();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30));
     }
