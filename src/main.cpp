@@ -775,15 +775,23 @@ void myTask(void *pvParameters) {
         int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
         Serial.println(val);
 
-        // Hot-plug detection: 5 consecutive reads of 359 = sensor absent
-        static uint8_t stuck_count = 0;
-        if (val == 359) { if (stuck_count < 5) stuck_count++; }
-        else            { stuck_count = 0; }
-        bool now_ok = (stuck_count < 5);
+        // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
+        // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
+        static uint8_t absent_cycles = 0;
+        uint8_t max_count = 0;
+        for (int i = 0; i < 8; i++) {
+            if (readAS5047P() == 0x3FFF) max_count++;
+        }
+        bool reading_absent = (max_count == 8);
 
+        // Debounce: require 3 consecutive confirming cycles (~90ms) before state change
+        if (reading_absent) { if (absent_cycles < 3) absent_cycles++; }
+        else                { absent_cycles = 0; }
+
+        bool now_ok = (absent_cycles < 3);
         if (now_ok != sensor_was_ok) {
-            sensor_ok      = now_ok;
-            sensor_was_ok  = now_ok;
+            sensor_ok     = now_ok;
+            sensor_was_ok = now_ok;
             lvglLock(portMAX_DELAY);
                 if (sensor_ok) lv_obj_add_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
                 else           lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
