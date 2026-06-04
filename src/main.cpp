@@ -2,6 +2,8 @@
 #include <Arduino.h>
 #include <math.h>
 
+#define FONT14 &lv_font_montserrat_14
+
 #define AS5047P_CS       9
 #define AS5047P_MOSI     7
 #define AS5047P_MISO     8
@@ -227,7 +229,7 @@ void createBootScreen() {
     lv_label_set_text(boot_label, boot_lines[0]);
     lv_label_set_long_mode(boot_label, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(boot_label, 440);
-    lv_obj_set_style_text_font(boot_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(boot_label, FONT14, 0);
     lv_obj_set_style_text_color(boot_label, lv_color_hex(0x00FF41), 0);
     lv_obj_align(boot_label, LV_ALIGN_TOP_LEFT, 20, 20);
 }
@@ -248,12 +250,12 @@ void createHomeScreen() {
     lv_obj_set_style_pad_all(top_bar, 0, 0);
     lv_obj_t *lbl_sys = lv_label_create(top_bar);
     lv_label_set_text(lbl_sys, "PROJET INTERFACAGE \xC2\xB7 CIMSIT S6");
-    lv_obj_set_style_text_font(lbl_sys, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lbl_sys, FONT14, 0);
     lv_obj_set_style_text_color(lbl_sys, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(lbl_sys, LV_ALIGN_LEFT_MID, 12, 0);
     lv_obj_t *lbl_state = lv_label_create(top_bar);
     lv_label_set_text(lbl_state, "\xE2\x97\x8F VERROUILLE");
-    lv_obj_set_style_text_font(lbl_state, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lbl_state, FONT14, 0);
     lv_obj_set_style_text_color(lbl_state, lv_color_hex(0x8B6914), 0);
     lv_obj_align(lbl_state, LV_ALIGN_RIGHT_MID, -12, 0);
     const int cx[4] = {8,458,8,458};
@@ -306,12 +308,12 @@ void createHomeScreen() {
     lv_obj_align(dot, LV_ALIGN_CENTER, 0, -22);
     lv_obj_t *title = lv_label_create(screen_home);
     lv_label_set_text(title, "SAFE CRACKER");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(title, FONT14, 0);
     lv_obj_set_style_text_color(title, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(title, LV_ALIGN_CENTER, 0, 46);
     lv_obj_t *sub = lv_label_create(screen_home);
     lv_label_set_text(sub, "COMBINAISON A 3 ANGLES \xC2\xB7 AS5047D");
-    lv_obj_set_style_text_font(sub, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(sub, FONT14, 0);
     lv_obj_set_style_text_color(sub, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(sub, LV_ALIGN_CENTER, 0, 68);
     lv_obj_t *btn = lv_button_create(screen_home);
@@ -326,7 +328,7 @@ void createHomeScreen() {
     lv_obj_add_event_cb(btn, btn_start_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *btn_lbl = lv_label_create(btn);
     lv_label_set_text(btn_lbl, "\xE2\x96\xBA NOUVELLE PARTIE");
-    lv_obj_set_style_text_font(btn_lbl, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(btn_lbl, FONT14, 0);
     lv_obj_set_style_text_color(btn_lbl, lv_color_hex(0xC8860A), 0);
     lv_obj_center(btn_lbl);
     lv_obj_t *warn = lv_obj_create(screen_home);
@@ -338,7 +340,7 @@ void createHomeScreen() {
     lv_obj_set_style_radius(warn, 0, 0);
     lv_obj_t *serial = lv_label_create(screen_home);
     lv_label_set_text(serial, "IUT-CACHAN \xC2\xB7 2025");
-    lv_obj_set_style_text_font(serial, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(serial, FONT14, 0);
     lv_obj_set_style_text_color(serial, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(serial, LV_ALIGN_BOTTOM_RIGHT, -12, -10);
 }
@@ -374,7 +376,7 @@ void createGameScreen() {
     lv_obj_set_style_pad_all(bot, 0, 0);
     lv_obj_t *hint = lv_label_create(bot);
     lv_label_set_text(hint, "\xE2\x96\xA0 TROUVER LES 3 ANGLES POUR DEVERROUILLER LE COFFRE");
-    lv_obj_set_style_text_font(hint, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(hint, FONT14, 0);
     lv_obj_set_style_text_color(hint, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(hint, LV_ALIGN_CENTER, 0, 0);
     lv_obj_t *sep = lv_obj_create(screen_game);
@@ -447,7 +449,7 @@ void createGameScreen() {
     lv_obj_set_style_pad_all(phdr, 0, 0);
     lv_obj_t *lhdr = lv_label_create(phdr);
     lv_label_set_text(lhdr, "DASHBOARD");
-    lv_obj_set_style_text_font(lhdr, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lhdr, FONT14, 0);
     lv_obj_set_style_text_color(lhdr, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(lhdr, LV_ALIGN_LEFT_MID, 8, 0);
     lv_obj_t *bbk = lv_button_create(phdr);
@@ -462,7 +464,7 @@ void createGameScreen() {
     lv_obj_add_event_cb(bbk, btn_accueil_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *lbk = lv_label_create(bbk);
     lv_label_set_text(lbk, "\xe2\x8c\x82 ACCUEIL");
-    lv_obj_set_style_text_font(lbk, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lbk, FONT14, 0);
     lv_obj_set_style_text_color(lbk, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(lbk);
     led_open = lv_led_create(screen_game);
@@ -485,7 +487,7 @@ void createGameScreen() {
     lv_obj_set_style_border_color(dot_widgets[0], lv_color_hex(0xC8860A), 0);
     label_step = lv_label_create(screen_game);
     lv_label_set_text(label_step, "ANGLE 1/3");
-    lv_obj_set_style_text_font(label_step, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(label_step, FONT14, 0);
     lv_obj_set_style_text_color(label_step, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(label_step, LV_ALIGN_TOP_RIGHT, -95, 33);
     int32_t cx2[3] = {-148,-84,-20};
@@ -500,18 +502,18 @@ void createGameScreen() {
         lv_obj_set_style_pad_all(cb, 0, 0);
         combo_cells[i] = lv_label_create(cb);
         lv_label_set_text(combo_cells[i], "???");
-        lv_obj_set_style_text_font(combo_cells[i], &lv_font_montserrat_14, 0);
+        lv_obj_set_style_text_font(combo_cells[i], FONT14, 0);
         lv_obj_set_style_text_color(combo_cells[i], lv_color_hex(0xFFFFFF), 0);
         lv_obj_align(combo_cells[i], LV_ALIGN_CENTER, 0, 0);
     }
     label_statut = lv_label_create(screen_game);
     lv_label_set_text(label_statut, "VERROUILLE");
-    lv_obj_set_style_text_font(label_statut, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(label_statut, FONT14, 0);
     lv_obj_set_style_text_color(label_statut, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(label_statut, LV_ALIGN_TOP_RIGHT, -10, 84);
     lv_obj_t *lp = lv_label_create(screen_game);
     lv_label_set_text(lp, "PROXIMITE CIBLE");
-    lv_obj_set_style_text_font(lp, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lp, FONT14, 0);
     lv_obj_set_style_text_color(lp, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(lp, LV_ALIGN_TOP_RIGHT, -10, 106);
     bar_prox = lv_bar_create(screen_game);
@@ -527,7 +529,7 @@ void createGameScreen() {
     lv_obj_set_style_radius(bar_prox, 0, LV_PART_INDICATOR);
     lv_obj_t *lh = lv_label_create(screen_game);
     lv_label_set_text(lh, "MAINTIEN");
-    lv_obj_set_style_text_font(lh, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lh, FONT14, 0);
     lv_obj_set_style_text_color(lh, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(lh, LV_ALIGN_TOP_RIGHT, -10, 136);
     bar_hold = lv_bar_create(screen_game);
@@ -551,7 +553,7 @@ void createGameScreen() {
     lv_obj_set_style_pad_all(ap, 0, 0);
     label_angle = lv_label_create(ap);
     lv_label_set_text(label_angle, "000\xC2\xB0");
-    lv_obj_set_style_text_font(label_angle, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(label_angle, FONT14, 0);
     lv_obj_set_style_text_color(label_angle, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(label_angle, LV_ALIGN_CENTER, 0, 0);
 }
@@ -643,13 +645,13 @@ void createVictoryScreen() {
     v_title_lbl = lv_label_create(screen_victory);
     lv_obj_t *vt = v_title_lbl;
     lv_label_set_text(vt, "\xe2\x9c\xa6 OUVERT \xe2\x9c\xa6");
-    lv_obj_set_style_text_font(vt, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(vt, FONT14, 0);
     lv_obj_set_style_text_color(vt, lv_color_hex(0xC8860A), 0);
     lv_obj_align(vt, LV_ALIGN_CENTER, 0, -70);
     v_sub_lbl = lv_label_create(screen_victory);
     lv_obj_t *vs = v_sub_lbl;
     lv_label_set_text(vs, "COMBINAISON TROUVEE");
-    lv_obj_set_style_text_font(vs, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(vs, FONT14, 0);
     lv_obj_set_style_text_color(vs, lv_color_hex(0xFFFFFF), 0);
     lv_obj_align(vs, LV_ALIGN_CENTER, 0, -48);
     int32_t vo[3] = {-66,0,66};
@@ -665,7 +667,7 @@ void createVictoryScreen() {
         lv_obj_set_style_pad_all(vc, 0, 0);
         v_combo_labels[i] = lv_label_create(vc);
         lv_label_set_text(v_combo_labels[i], "---");
-        lv_obj_set_style_text_font(v_combo_labels[i], &lv_font_montserrat_14, 0);
+        lv_obj_set_style_text_font(v_combo_labels[i], FONT14, 0);
         lv_obj_set_style_text_color(v_combo_labels[i], lv_color_hex(0xC8860A), 0);
         lv_obj_align(v_combo_labels[i], LV_ALIGN_CENTER, 0, 0);
         lv_obj_set_style_opa(v_cell_bg[i], 0, 0);
@@ -683,7 +685,7 @@ void createVictoryScreen() {
     lv_obj_add_event_cb(br, btn_rejouer_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *lr = lv_label_create(br);
     lv_label_set_text(lr, "\xe2\x86\xba REJOUER");
-    lv_obj_set_style_text_font(lr, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lr, FONT14, 0);
     lv_obj_set_style_text_color(lr, lv_color_hex(0xC8860A), 0);
     lv_obj_center(lr);
     v_btn_home = lv_button_create(screen_victory);
@@ -699,7 +701,7 @@ void createVictoryScreen() {
     lv_obj_add_event_cb(ba, btn_accueil_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *la = lv_label_create(ba);
     lv_label_set_text(la, "\xe2\x8c\x82 ACCUEIL");
-    lv_obj_set_style_text_font(la, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(la, FONT14, 0);
     lv_obj_set_style_text_color(la, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(la);
     lv_obj_t *wv = lv_obj_create(screen_victory);
