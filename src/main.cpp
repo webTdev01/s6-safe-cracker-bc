@@ -560,6 +560,10 @@ static void opa_cb(void *var, int32_t v) {
     lv_obj_set_style_opa((lv_obj_t *)var, (lv_opa_t)v, 0);
 }
 
+static void anim_timeline_done_cb(lv_anim_timeline_t *tl) {
+    lv_anim_timeline_delete(tl);
+}
+
 void playVictoryAnimation() {
     lv_anim_timeline_t *tl = lv_anim_timeline_create();
     lv_anim_t a;
@@ -613,6 +617,7 @@ void playVictoryAnimation() {
     lv_anim_timeline_add(tl, 1850, &a);
 
     lv_anim_timeline_start(tl);
+    lv_anim_timeline_set_completed_cb(tl, anim_timeline_done_cb);
 }
 
 void createVictoryScreen() {
