@@ -121,8 +121,8 @@ void generateNewGame() {
     lv_obj_set_style_border_color(dot_widgets[0], lv_color_hex(0xC8860A), 0);
     if (v_title_lbl)  lv_obj_set_style_opa(v_title_lbl, 0, 0);
     if (v_sub_lbl)    lv_obj_set_style_opa(v_sub_lbl, 0, 0);
-    if (v_btn_play)   lv_obj_set_style_opa(v_btn_play, 0, 0);
-    if (v_btn_home)   lv_obj_set_style_opa(v_btn_home, 0, 0);
+    if (v_btn_play)   lv_obj_add_flag(v_btn_play, LV_OBJ_FLAG_HIDDEN);
+    if (v_btn_home)   lv_obj_add_flag(v_btn_home, LV_OBJ_FLAG_HIDDEN);
     if (v_flash_obj)  lv_obj_set_style_opa(v_flash_obj, 0, 0);
     for (int i = 0; i < 3; i++)
         if (v_cell_bg[i]) lv_obj_set_style_opa(v_cell_bg[i], 0, 0);
@@ -570,6 +570,15 @@ static void victory_timeline_done_cb(lv_anim_t *a) {
     lv_anim_timeline_delete(tl);
 }
 
+static void show_btn_play_cb(lv_timer_t *t) {
+    lv_obj_remove_flag(v_btn_play, LV_OBJ_FLAG_HIDDEN);
+    lv_timer_delete(t);
+}
+static void show_btn_home_cb(lv_timer_t *t) {
+    lv_obj_remove_flag(v_btn_home, LV_OBJ_FLAG_HIDDEN);
+    lv_timer_delete(t);
+}
+
 void playVictoryAnimation() {
     lv_anim_timeline_t *tl = lv_anim_timeline_create();
     lv_anim_t a;
@@ -608,23 +617,9 @@ void playVictoryAnimation() {
         lv_anim_timeline_add(tl, 950 + i * 200, &a);
     }
 
-    lv_anim_init(&a);
-    lv_anim_set_var(&a, v_btn_play);
-    lv_anim_set_exec_cb(&a, opa_cb);
-    lv_anim_set_values(&a, 0, 255);
-    lv_anim_set_duration(&a, 500);
-    lv_anim_timeline_add(tl, 1700, &a);
-
-    lv_anim_init(&a);
-    lv_anim_set_var(&a, v_btn_home);
-    lv_anim_set_exec_cb(&a, opa_cb);
-    lv_anim_set_values(&a, 0, 255);
-    lv_anim_set_duration(&a, 500);
-    lv_anim_set_user_data(&a, tl);
-    lv_anim_set_completed_cb(&a, victory_timeline_done_cb);
-    lv_anim_timeline_add(tl, 1850, &a);
-
     lv_anim_timeline_start(tl);
+    lv_timer_create(show_btn_play_cb, 2200, NULL);
+    lv_timer_create(show_btn_home_cb, 2400, NULL);
 }
 
 void createVictoryScreen() {
@@ -716,8 +711,8 @@ void createVictoryScreen() {
     lv_obj_set_style_radius(wv, 0, 0);
     lv_obj_set_style_opa(v_title_lbl, 0, 0);
     lv_obj_set_style_opa(v_sub_lbl, 0, 0);
-    lv_obj_set_style_opa(v_btn_play, 0, 0);
-    lv_obj_set_style_opa(v_btn_home, 0, 0);
+    lv_obj_add_flag(v_btn_play, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(v_btn_home, LV_OBJ_FLAG_HIDDEN);
 }
 
 #ifdef ARDUINO
