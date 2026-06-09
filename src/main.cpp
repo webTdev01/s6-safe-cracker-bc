@@ -863,9 +863,7 @@ void mySetup() {
     createMenuScreen();
     createSafeCrackerScreen();
     pinMode(USER_BTN_PIN, INPUT);
-    // Heartbeat timer: prevents lv_timer_handler() returning
-    // LV_NO_TIMER_READY (0xFFFFFFFF) which would freeze lvglTask
-    lv_timer_create([](lv_timer_t*){}, 100, NULL);
+    lv_timer_create(boot_timer_cb, 600, NULL);
     lv_scr_load(scr_menu);
 }
 
