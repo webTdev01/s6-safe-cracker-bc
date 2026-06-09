@@ -851,7 +851,6 @@ void mySetup() {
     createMenuScreen();
     createSafeCrackerScreen();
     pinMode(USER_BTN_PIN, INPUT);
-    lv_timer_create(boot_timer_cb, 600, NULL);
     lv_scr_load(scr_menu);
 }
 
