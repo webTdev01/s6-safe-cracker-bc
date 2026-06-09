@@ -1,6 +1,8 @@
 #include "lvgl.h"
 #include <Arduino.h>
 #include <math.h>
+#include "spinSurvive.h"
+#define USER_BTN_PIN PI_11
 
 typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
 ActiveGame_t activeGame = MENU;
@@ -43,7 +45,10 @@ static uint16_t readAS5047P() {
 }
 
 static lv_obj_t *scr_safeCracker   = NULL;
-static lv_obj_t *scr_menu          = NULL;
+lv_obj_t *scr_menu                 = NULL;
+static float    ss_prev_angle      = 0.0f;
+static float    ss_curr_speed      = 0.0f;
+static uint32_t ss_prev_time       = 0;
 static lv_obj_t *screen_home       = NULL;
 static lv_obj_t *screen_game       = NULL;
 static lv_obj_t *screen_victory    = NULL;
@@ -114,8 +119,7 @@ static void btn_safeCracker_cb(lv_event_t * e) {
 
 static void btn_spinSurvive_cb(lv_event_t * e) {
     activeGame = SPIN_SURVIVE;
-    // hide menu screen, show Spin & Survive screen
-    // call showSpinSurviveScreen() — stub for now, just set activeGame
+    SS_ShowScreen();
 }
 
 void createMenuScreen() {
@@ -843,6 +847,8 @@ void mySetup() {
     randomSeed(analogRead(A0) + millis());
     createMenuScreen();
     createSafeCrackerScreen();
+    pinMode(USER_BTN_PIN, INPUT);
+    SS_CreateScreen();
     lv_scr_load(scr_menu);
 }
 
@@ -882,7 +888,26 @@ void myTask(void *pvParameters) {
                 if (sensor_ok) updateGame(val);
             lvglUnlock();
         } else if (activeGame == SPIN_SURVIVE) {
-            /* TODO */
+            uint16_t raw = readAS5047P();
+            float cur_angle = raw * 360.0f / 16384.0f;
+
+            uint32_t now   = millis();
+            uint32_t dt_ms = now - ss_prev_time;
+            if (dt_ms == 0) dt_ms = 1;
+            float delta = cur_angle - ss_prev_angle;
+            if (delta >  180.0f) delta -= 360.0f;
+            if (delta < -180.0f) delta += 360.0f;
+            ss_curr_speed  = fabsf(delta) / (dt_ms / 1000.0f);
+            ss_prev_angle  = cur_angle;
+            ss_prev_time   = now;
+
+            if (digitalRead(USER_BTN_PIN) == HIGH) {
+                ss_button_pressed = true;
+            }
+
+            lvglLock(portMAX_DELAY);
+                SS_Update(cur_angle, ss_curr_speed);
+            lvglUnlock();
         }
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30));
     }
