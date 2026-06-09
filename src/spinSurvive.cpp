@@ -198,7 +198,7 @@ void SS_CreateScreen()
 
 void SS_ShowScreen()
 {
-    if (!ss_screen_created) {
+    if (!scr_ss) {
         SS_CreateScreen();
     }
     current_round  = 1;
