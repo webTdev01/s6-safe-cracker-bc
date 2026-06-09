@@ -807,7 +807,6 @@ void createVictoryScreen() {
 
 void createSafeCrackerScreen() {
     createBootScreen();
-    scr_safeCracker = screen_boot;
     createHomeScreen();
     createGameScreen();
     createVictoryScreen();
