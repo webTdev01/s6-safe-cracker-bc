@@ -100,18 +100,14 @@ static void btn_rejouer_cb(lv_event_t *e) {
     lv_screen_load_anim(screen_game, LV_SCR_LOAD_ANIM_FADE_IN, 400, 0, false);
 }
 
-static void showSafeCrackerScreen() {
-    // TODO: hide menu, show Safe Cracker screen
-}
-
-static void showSpinSurviveScreen() {
-    // TODO: hide menu, show Spin & Survive screen
+static void btn_back_to_menu_cb(lv_event_t * e) {
+    activeGame = MENU;
+    lv_scr_load(scr_menu);
 }
 
 static void btn_safeCracker_cb(lv_event_t * e) {
     activeGame = SAFE_CRACKER;
-    // hide menu screen, show Safe Cracker screen
-    // call showSafeCrackerScreen() — stub for now, just set activeGame
+    lv_scr_load(scr_safeCracker);
 }
 
 static void btn_spinSurvive_cb(lv_event_t * e) {
@@ -121,9 +117,7 @@ static void btn_spinSurvive_cb(lv_event_t * e) {
 }
 
 void createMenuScreen() {
-    lv_obj_t *scr = lv_scr_act();
-    scr_menu = lv_obj_create(scr);
-    lv_obj_set_size(scr_menu, LV_PCT(100), LV_PCT(100));
+    scr_menu = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr_menu, lv_color_hex(0x1A1A2E), 0);
     lv_obj_set_style_border_width(scr_menu, 0, 0);
     lv_obj_set_style_pad_all(scr_menu, 0, 0);
@@ -281,7 +275,9 @@ static void boot_timer_cb(lv_timer_t *t) {
 }
 
 void createBootScreen() {
-    screen_boot = lv_obj_create(NULL);
+    if (!screen_boot) {
+        screen_boot = lv_obj_create(NULL);
+    }
     lv_obj_set_style_bg_color(screen_boot, lv_color_hex(0x000000), 0);
     lv_obj_set_style_pad_all(screen_boot, 0, 0);
     lv_obj_set_style_border_width(screen_boot, 0, 0);
@@ -300,6 +296,21 @@ void createHomeScreen() {
     lv_obj_set_style_bg_color(screen_home, lv_color_hex(0x0e0e0e), 0);
     lv_obj_set_style_pad_all(screen_home, 0, 0);
     lv_obj_set_style_border_width(screen_home, 0, 0);
+    lv_obj_t *btn_menu = lv_button_create(screen_home);
+    lv_obj_set_size(btn_menu, 56, 20);
+    lv_obj_align(btn_menu, LV_ALIGN_TOP_LEFT, 4, 2);
+    lv_obj_set_style_bg_color(btn_menu, lv_color_hex(0x161616), 0);
+    lv_obj_set_style_bg_color(btn_menu, lv_color_hex(0x2a2a2a), LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(btn_menu, lv_color_hex(0x2a2a2a), 0);
+    lv_obj_set_style_border_width(btn_menu, 1, 0);
+    lv_obj_set_style_radius(btn_menu, 0, 0);
+    lv_obj_set_style_shadow_width(btn_menu, 0, 0);
+    lv_obj_add_event_cb(btn_menu, btn_back_to_menu_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *lbl_menu = lv_label_create(btn_menu);
+    lv_label_set_text(lbl_menu, "MENU");
+    lv_obj_set_style_text_font(lbl_menu, FONT14, 0);
+    lv_obj_set_style_text_color(lbl_menu, lv_color_hex(0xAAAAAA), 0);
+    lv_obj_center(lbl_menu);
     lv_obj_t *top_bar = lv_obj_create(screen_home);
     lv_obj_set_size(top_bar, 480, 24);
     lv_obj_set_pos(top_bar, 0, 0);
@@ -781,12 +792,13 @@ void createVictoryScreen() {
 }
 
 void createSafeCrackerScreen() {
+    scr_safeCracker = lv_obj_create(NULL);
+    screen_boot = scr_safeCracker;
     createBootScreen();
     createHomeScreen();
     createGameScreen();
     createVictoryScreen();
     generateNewGame();
-    scr_safeCracker = screen_boot;
 }
 
 #ifdef ARDUINO
@@ -822,6 +834,8 @@ void mySetup() {
     boot_lines[5] = boot_l5;
     randomSeed(analogRead(A0) + millis());
     createMenuScreen();
+    createSafeCrackerScreen();
+    lv_scr_load(scr_menu);
 }
 
 void loop() {}
