@@ -270,11 +270,12 @@ static void home_arc_pulse_cb(void *var, int32_t v) {
 static const char *boot_lines[6];
 
 static void boot_timer_cb(lv_timer_t *t) {
-    boot_step++;
     if (boot_step < 6) {
         lv_label_set_text(boot_label, boot_lines[boot_step]);
+        boot_step++;
     } else {
         lv_timer_delete(t);
+        boot_step = 0;
         if (activeGame == SAFE_CRACKER) {
             lv_screen_load_anim(screen_home, LV_SCR_LOAD_ANIM_FADE_IN, 1000, 0, false);
         } else {
