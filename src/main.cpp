@@ -100,6 +100,8 @@ static void btn_rejouer_cb(lv_event_t *e) {
     lv_screen_load_anim(screen_game, LV_SCR_LOAD_ANIM_FADE_IN, 400, 0, false);
 }
 
+static void startBootSequence(void);
+
 static void btn_back_to_menu_cb(lv_event_t * e) {
     activeGame = MENU;
     lv_scr_load(scr_menu);
@@ -107,7 +109,7 @@ static void btn_back_to_menu_cb(lv_event_t * e) {
 
 static void btn_safeCracker_cb(lv_event_t * e) {
     activeGame = SAFE_CRACKER;
-    lv_scr_load(scr_safeCracker);
+    startBootSequence();
 }
 
 static void btn_spinSurvive_cb(lv_event_t * e) {
@@ -272,6 +274,13 @@ static void boot_timer_cb(lv_timer_t *t) {
         lv_timer_delete(t);
         lv_screen_load_anim(screen_home, LV_SCR_LOAD_ANIM_FADE_IN, 1000, 0, false);
     }
+}
+
+static void startBootSequence(void) {
+    boot_step = 0;
+    lv_label_set_text(boot_label, boot_lines[0]);
+    lv_scr_load(screen_boot);
+    lv_timer_create(boot_timer_cb, 600, NULL);
 }
 
 void createBootScreen() {
@@ -792,9 +801,8 @@ void createVictoryScreen() {
 }
 
 void createSafeCrackerScreen() {
-    scr_safeCracker = lv_obj_create(NULL);
-    screen_boot = scr_safeCracker;
     createBootScreen();
+    scr_safeCracker = screen_boot;
     createHomeScreen();
     createGameScreen();
     createVictoryScreen();
