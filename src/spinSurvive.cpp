@@ -195,6 +195,9 @@ void SS_CreateScreen()
 
 void SS_ShowScreen()
 {
+    if (!scr_ss) {
+        SS_CreateScreen();
+    }
     current_round  = 1;
     ss_state       = SS_IDLE;
     needle_angle   = 0.0f;
