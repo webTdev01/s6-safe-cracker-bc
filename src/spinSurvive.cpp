@@ -134,9 +134,10 @@ void SS_CreateScreen()
         lv_arc_set_bg_angles(arc_sectors[i], i * 60, i * 60 + 58);
         lv_obj_set_style_arc_opa(arc_sectors[i], LV_OPA_TRANSP,
                                  LV_PART_INDICATOR);
-        lv_obj_set_style_arc_opa(arc_sectors[i],
-                                 LV_OPA_TRANSP, LV_PART_KNOB);
-        lv_obj_set_style_arc_width(arc_sectors[i], 0, LV_PART_KNOB);
+        lv_obj_set_style_arc_opa(arc_sectors[i], LV_OPA_TRANSP,
+                                 LV_PART_KNOB);
+        lv_obj_set_style_arc_width(arc_sectors[i], 0,
+                                   LV_PART_KNOB);
         lv_obj_set_style_arc_width(arc_sectors[i], 40, LV_PART_MAIN);
         lv_obj_remove_flag(arc_sectors[i], LV_OBJ_FLAG_CLICKABLE);
     }
