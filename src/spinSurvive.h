@@ -13,11 +13,8 @@ typedef enum {
     SS_VICTORY     // survived all 4 rounds — waiting for menu tap
 } SpinSurviveState_t;
 
-// Public API — called from main.cpp
-void SS_CreateScreen();   // build all LVGL widgets, do NOT load screen
-void SS_ShowScreen();     // reset game state, call lv_scr_load(scr_ss)
+void SS_CreateScreen();
+void SS_ShowScreen();
 void SS_Update(float angleDeg, float speedDegPerSec);
-      // called from myTask() every 30 ms, already inside lvglLock context
-
-// Flag set by main.cpp when USER_BUTTON is pressed
 extern bool ss_button_pressed;
+extern bool ss_screen_created;

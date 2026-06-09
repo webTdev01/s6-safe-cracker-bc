@@ -848,7 +848,6 @@ void mySetup() {
     createMenuScreen();
     createSafeCrackerScreen();
     pinMode(USER_BTN_PIN, INPUT);
-    SS_CreateScreen();
     lv_scr_load(scr_menu);
 }
 

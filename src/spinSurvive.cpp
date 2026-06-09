@@ -21,6 +21,7 @@ static int    current_round         = 1;
 static float  needle_angle          = 0.0f;
 static float  needle_speed          = 0.0f;
 bool          ss_button_pressed     = false;
+bool          ss_screen_created     = false;
 
 static lv_point_precise_t needle_pts[2];
 
@@ -192,10 +193,14 @@ void SS_CreateScreen()
     lv_label_set_text(lbl_btn, "PLAY AGAIN");
     lv_obj_set_style_text_font(lbl_btn, FONT14, 0);
     lv_obj_center(lbl_btn);
+    ss_screen_created = true;
 }
 
 void SS_ShowScreen()
 {
+    if (!ss_screen_created) {
+        SS_CreateScreen();
+    }
     current_round  = 1;
     ss_state       = SS_IDLE;
     needle_angle   = 0.0f;
