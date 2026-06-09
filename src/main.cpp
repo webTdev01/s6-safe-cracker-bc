@@ -49,7 +49,6 @@ static float    ss_prev_angle      = 0.0f;
 static float    ss_curr_speed      = 0.0f;
 static uint32_t ss_prev_time       = 0;
 static lv_obj_t *screen_home       = NULL;
-static lv_obj_t *home_deco         = NULL;
 static lv_obj_t *screen_game       = NULL;
 static lv_obj_t *screen_victory    = NULL;
 static lv_obj_t *arc_cadran        = NULL;
@@ -366,19 +365,29 @@ void createHomeScreen() {
         lv_obj_set_style_border_side(c, cs[i], 0);
         lv_obj_set_style_pad_all(c, 0, 0);
     }
-    home_deco = lv_arc_create(screen_home);
-    lv_obj_set_size(home_deco, 90, 90);
-    lv_obj_align(home_deco, LV_ALIGN_CENTER, 0, -22);
-    lv_arc_set_range(home_deco, 0, 100);
-    lv_arc_set_value(home_deco, 65);
-    lv_arc_set_bg_angles(home_deco, 0, 360);
-    lv_obj_set_style_arc_color(home_deco, lv_color_hex(0x8B6914), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(home_deco, 4, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(home_deco, lv_color_hex(0x1e1e1e), LV_PART_MAIN);
-    lv_obj_set_style_arc_width(home_deco, 4, LV_PART_MAIN);
-    lv_obj_set_style_arc_width(home_deco, 0, LV_PART_KNOB);
-    lv_obj_set_style_pad_all(home_deco, 0, LV_PART_KNOB);
-    lv_obj_remove_flag(home_deco, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_t *deco = lv_arc_create(screen_home);
+    lv_obj_set_size(deco, 90, 90);
+    lv_obj_align(deco, LV_ALIGN_CENTER, 0, -22);
+    lv_arc_set_range(deco, 0, 100);
+    lv_arc_set_value(deco, 65);
+    lv_arc_set_bg_angles(deco, 0, 360);
+    lv_obj_set_style_arc_color(deco, lv_color_hex(0x8B6914), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(deco, 4, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(deco, lv_color_hex(0x1e1e1e), LV_PART_MAIN);
+    lv_obj_set_style_arc_width(deco, 4, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(deco, 0, LV_PART_KNOB);
+    lv_obj_set_style_pad_all(deco, 0, LV_PART_KNOB);
+    lv_obj_remove_flag(deco, LV_OBJ_FLAG_CLICKABLE);
+    lv_anim_t a_pulse;
+    lv_anim_init(&a_pulse);
+    lv_anim_set_var(&a_pulse, deco);
+    lv_anim_set_exec_cb(&a_pulse, home_arc_pulse_cb);
+    lv_anim_set_values(&a_pulse, 5, 95);
+    lv_anim_set_duration(&a_pulse, 2500);
+    lv_anim_set_playback_duration(&a_pulse, 2500);
+    lv_anim_set_repeat_count(&a_pulse, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_set_path_cb(&a_pulse, lv_anim_path_ease_in_out);
+    lv_anim_start(&a_pulse);
     lv_obj_t *dot = lv_obj_create(screen_home);
     lv_obj_set_size(dot, 10, 10);
     lv_obj_set_style_radius(dot, 5, 0);
@@ -422,30 +431,6 @@ void createHomeScreen() {
     lv_obj_set_style_text_font(serial, FONT14, 0);
     lv_obj_set_style_text_color(serial, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(serial, LV_ALIGN_BOTTOM_RIGHT, -12, -10);
-
-    lv_obj_add_event_cb(screen_home,
-        [](lv_event_t *e) {
-            if (!home_deco) return;
-            lv_anim_delete(home_deco, home_arc_pulse_cb);
-            lv_anim_t a;
-            lv_anim_init(&a);
-            lv_anim_set_var(&a, home_deco);
-            lv_anim_set_exec_cb(&a, home_arc_pulse_cb);
-            lv_anim_set_values(&a, 5, 95);
-            lv_anim_set_duration(&a, 2500);
-            lv_anim_set_playback_duration(&a, 2500);
-            lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
-            lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
-            lv_anim_start(&a);
-        },
-        LV_EVENT_SCREEN_LOADED, NULL);
-
-    lv_obj_add_event_cb(screen_home,
-        [](lv_event_t *e) {
-            if (home_deco)
-                lv_anim_delete(home_deco, home_arc_pulse_cb);
-        },
-        LV_EVENT_SCREEN_UNLOADED, NULL);
 }
 
 void createGameScreen() {
