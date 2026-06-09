@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
+
 typedef enum {
     SS_IDLE,       // waiting for player to spin the magnet
     SS_SPINNING,   // needle decelerating after button press

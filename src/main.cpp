@@ -1,10 +1,9 @@
+#include "spinSurvive.h"
 #include "lvgl.h"
 #include <Arduino.h>
 #include <math.h>
-#include "spinSurvive.h"
 #define USER_BTN_PIN PI_11
 
-typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
 ActiveGame_t activeGame = MENU;
 
 #define FONT14 &lv_font_montserrat_14
@@ -276,7 +275,9 @@ static void boot_timer_cb(lv_timer_t *t) {
         lv_label_set_text(boot_label, boot_lines[boot_step]);
     } else {
         lv_timer_delete(t);
-        lv_screen_load_anim(screen_home, LV_SCR_LOAD_ANIM_FADE_IN, 1000, 0, false);
+        if (activeGame == SAFE_CRACKER) {
+            lv_screen_load_anim(screen_home, LV_SCR_LOAD_ANIM_FADE_IN, 1000, 0, false);
+        }
     }
 }
 

@@ -4,7 +4,6 @@
 
 #define FONT14 &lv_font_montserrat_14
 
-typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
 extern ActiveGame_t activeGame;
 extern lv_obj_t *scr_menu;
 
