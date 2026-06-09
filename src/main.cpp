@@ -2,6 +2,9 @@
 #include <Arduino.h>
 #include <math.h>
 
+typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
+ActiveGame_t activeGame = MENU;
+
 #define FONT14 &lv_font_montserrat_14
 
 #define AS5047P_CS       9
@@ -39,6 +42,8 @@ static uint16_t readAS5047P() {
     return (response & 0x3FFF);
 }
 
+static lv_obj_t *scr_safeCracker   = NULL;
+static lv_obj_t *scr_menu          = NULL;
 static lv_obj_t *screen_home       = NULL;
 static lv_obj_t *screen_game       = NULL;
 static lv_obj_t *screen_victory    = NULL;
@@ -75,6 +80,8 @@ static bool sensor_was_ok    = true;
 static const int32_t TOLERANCE_DEG = 10;
 static const int32_t CLOSE_DEG     = 30;
 
+void createMenuScreen();
+void createSafeCrackerScreen();
 void createHomeScreen();
 void createGameScreen();
 void createVictoryScreen();
@@ -91,6 +98,64 @@ static void btn_accueil_cb(lv_event_t *e) {
 static void btn_rejouer_cb(lv_event_t *e) {
     generateNewGame();
     lv_screen_load_anim(screen_game, LV_SCR_LOAD_ANIM_FADE_IN, 400, 0, false);
+}
+
+static void showSafeCrackerScreen() {
+    // TODO: hide menu, show Safe Cracker screen
+}
+
+static void showSpinSurviveScreen() {
+    // TODO: hide menu, show Spin & Survive screen
+}
+
+static void btn_safeCracker_cb(lv_event_t * e) {
+    activeGame = SAFE_CRACKER;
+    // hide menu screen, show Safe Cracker screen
+    // call showSafeCrackerScreen() — stub for now, just set activeGame
+}
+
+static void btn_spinSurvive_cb(lv_event_t * e) {
+    activeGame = SPIN_SURVIVE;
+    // hide menu screen, show Spin & Survive screen
+    // call showSpinSurviveScreen() — stub for now, just set activeGame
+}
+
+void createMenuScreen() {
+    lv_obj_t *scr = lv_scr_act();
+    scr_menu = lv_obj_create(scr);
+    lv_obj_set_size(scr_menu, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_color(scr_menu, lv_color_hex(0x1A1A2E), 0);
+    lv_obj_set_style_border_width(scr_menu, 0, 0);
+    lv_obj_set_style_pad_all(scr_menu, 0, 0);
+    lv_obj_remove_flag(scr_menu, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *title = lv_label_create(scr_menu);
+    lv_label_set_text(title, "SELECT GAME");
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xE0E0E0), 0);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 20);
+
+    lv_obj_t *btn1 = lv_button_create(scr_menu);
+    lv_obj_set_size(btn1, 180, 80);
+    lv_obj_align(btn1, LV_ALIGN_LEFT_MID, 30, 0);
+    lv_obj_set_style_bg_color(btn1, lv_color_hex(0x2D6A4F), 0);
+    lv_obj_add_event_cb(btn1, btn_safeCracker_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *lbl1 = lv_label_create(btn1);
+    lv_label_set_text(lbl1, "SAFE\nCRACKER");
+    lv_obj_set_style_text_font(lbl1, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_align(lbl1, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_center(lbl1);
+
+    lv_obj_t *btn2 = lv_button_create(scr_menu);
+    lv_obj_set_size(btn2, 180, 80);
+    lv_obj_align(btn2, LV_ALIGN_RIGHT_MID, -30, 0);
+    lv_obj_set_style_bg_color(btn2, lv_color_hex(0x7B2D2D), 0);
+    lv_obj_add_event_cb(btn2, btn_spinSurvive_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *lbl2 = lv_label_create(btn2);
+    lv_label_set_text(lbl2, "SPIN &\nSURVIVE");
+    lv_obj_set_style_text_font(lbl2, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_align(lbl2, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_center(lbl2);
 }
 
 void generateNewGame() {
@@ -715,6 +780,15 @@ void createVictoryScreen() {
     lv_obj_add_flag(v_btn_home, LV_OBJ_FLAG_HIDDEN);
 }
 
+void createSafeCrackerScreen() {
+    createBootScreen();
+    createHomeScreen();
+    createGameScreen();
+    createVictoryScreen();
+    generateNewGame();
+    scr_safeCracker = screen_boot;
+}
+
 #ifdef ARDUINO
 #include "lvglDrivers.h"
 
@@ -747,13 +821,7 @@ void mySetup() {
     boot_lines[4] = boot_l4;
     boot_lines[5] = boot_l5;
     randomSeed(analogRead(A0) + millis());
-    createBootScreen();
-    createHomeScreen();
-    createGameScreen();
-    createVictoryScreen();
-    generateNewGame();
-    lv_screen_load(screen_boot);
-    lv_timer_create(boot_timer_cb, 600, NULL);
+    createMenuScreen();
 }
 
 void loop() {}
@@ -761,35 +829,39 @@ void loop() {}
 void myTask(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1) {
-        uint16_t raw = readAS5047P();
-        int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
+        if (activeGame == SAFE_CRACKER) {
+            uint16_t raw = readAS5047P();
+            int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
 
-        // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
-        // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
-        static uint8_t absent_cycles = 0;
-        uint8_t max_count = 0;
-        for (int i = 0; i < 8; i++) {
-            if (readAS5047P() == 0x3FFF) max_count++;
-        }
-        bool reading_absent = (max_count == 8);
+            // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
+            // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
+            static uint8_t absent_cycles = 0;
+            uint8_t max_count = 0;
+            for (int i = 0; i < 8; i++) {
+                if (readAS5047P() == 0x3FFF) max_count++;
+            }
+            bool reading_absent = (max_count == 8);
 
-        // Debounce: require 3 consecutive confirming cycles (~90ms) before state change
-        if (reading_absent) { if (absent_cycles < 3) absent_cycles++; }
-        else                { absent_cycles = 0; }
+            // Debounce: require 3 consecutive confirming cycles (~90ms) before state change
+            if (reading_absent) { if (absent_cycles < 3) absent_cycles++; }
+            else                { absent_cycles = 0; }
 
-        bool now_ok = (absent_cycles < 3);
-        if (now_ok != sensor_was_ok) {
-            sensor_ok     = now_ok;
-            sensor_was_ok = now_ok;
+            bool now_ok = (absent_cycles < 3);
+            if (now_ok != sensor_was_ok) {
+                sensor_ok     = now_ok;
+                sensor_was_ok = now_ok;
+                lvglLock(portMAX_DELAY);
+                    if (sensor_ok) lv_obj_add_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+                    else           lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+                lvglUnlock();
+            }
+
             lvglLock(portMAX_DELAY);
-                if (sensor_ok) lv_obj_add_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
-                else           lv_obj_remove_flag(lbl_sensor_error, LV_OBJ_FLAG_HIDDEN);
+                if (sensor_ok) updateGame(val);
             lvglUnlock();
+        } else if (activeGame == SPIN_SURVIVE) {
+            /* TODO */
         }
-
-        lvglLock(portMAX_DELAY);
-            if (sensor_ok) updateGame(val);
-        lvglUnlock();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30));
     }
 }
