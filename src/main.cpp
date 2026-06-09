@@ -278,6 +278,8 @@ static void boot_timer_cb(lv_timer_t *t) {
         lv_timer_delete(t);
         if (activeGame == SAFE_CRACKER) {
             lv_screen_load_anim(screen_home, LV_SCR_LOAD_ANIM_FADE_IN, 1000, 0, false);
+        } else {
+            lv_timer_create(boot_timer_cb, 600, NULL);
         }
     }
 }
