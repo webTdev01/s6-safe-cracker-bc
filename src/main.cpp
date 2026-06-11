@@ -125,9 +125,20 @@ void createMenuScreen() {
 }
 
 void generateNewGame() {
-    secret_angles[0] = random(0, 360);
-    secret_angles[1] = random(0, 360);
-    secret_angles[2] = random(0, 360);
+    for (int slot = 0; slot < 3; slot++) {
+        int32_t candidate;
+        bool ok;
+        do {
+            candidate = random(0, 360);
+            ok = true;
+            for (int j = 0; j < slot; j++) {
+                int32_t diff = abs(candidate - secret_angles[j]);
+                if (diff > 180) diff = 360 - diff;
+                if (diff < 30) { ok = false; break; }
+            }
+        } while (!ok);
+        secret_angles[slot] = candidate;
+    }
     current_step = 0;
     hold_timer   = 0;
     is_unlocked  = false;
@@ -390,7 +401,7 @@ void createHomeScreen() {
     lv_obj_set_style_border_width(warn, 0, 0);
     lv_obj_set_style_radius(warn, 0, 0);
     lv_obj_t *serial = lv_label_create(screen_home);
-    lv_label_set_text(serial, "   IUT-CACHAN \xC2\xB7 2025");
+    lv_label_set_text(serial, "   IUT-CACHAN \xC2\xB7 2026");
     lv_obj_set_style_text_font(serial, FONT14, 0);
     lv_obj_set_style_text_color(serial, lv_color_hex(0xAAAAAA), 0);
     lv_obj_align(serial, LV_ALIGN_BOTTOM_RIGHT, -12, -10);
@@ -819,11 +830,11 @@ void myTask(void *pvParameters) {
             uint16_t raw = AS5047D_ReadRaw();
             int32_t  val = (int32_t)AS5047D_RawToDeg(raw);
 
-            // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
-            // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
+            // Détection absence capteur : 1 lecture réutilisée + 7 nouvelles = 8 au total par tick
+            // Un vrai capteur à 359° a du bruit LSB, jamais 8/8 lectures identiques à 0x3FFF
             static uint8_t absent_cycles = 0;
-            uint8_t max_count = 0;
-            for (int i = 0; i < 8; i++) {
+            uint8_t max_count = (raw == 0x3FFF) ? 1 : 0;
+            for (int i = 0; i < 7; i++) {
                 if (AS5047D_ReadRaw() == 0x3FFF) max_count++;
             }
             bool reading_absent = (max_count == 8);
