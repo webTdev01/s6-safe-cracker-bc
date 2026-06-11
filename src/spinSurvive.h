@@ -1,4 +1,4 @@
-// Module Spin & Survive — mini-jeu de roulette russe sur STM32F746NG-DISCO
+// Module Spin & Survive — roulette russe sur STM32F746NG-DISCO
 // Carte : STM32F746NG-DISCO  |  Auteur : [étudiant]  |  Date : 2026
 // Appelé depuis main.cpp ; tous les appels LVGL de ce module se font
 // depuis myTask() via lvglLock/lvglUnlock — ne jamais ajouter de lock dans un callback.
@@ -9,18 +9,19 @@
 
 // États de la machine d'états du jeu Spin & Survive
 typedef enum {
-    SS_IDLE,      // en attente : le barillet suit l'angle du capteur en temps réel
-    SS_SPINNING,  // réservé (non utilisé dans l'implémentation actuelle)
-    SS_RESULT,    // pause 2 s après un survie : affichage du résultat avant round suivant
-    SS_DEAD,      // mort : overlay rouge affiché, attente du bouton "Rejouer"
-    SS_VICTORY    // victoire : tous les 4 rounds passés, attente du bouton "Menu"
-} SpinSurviveState_t;
+    SS_HOME,       // écran d'accueil S&S (règles + JOUER)
+    SS_WAIT_SPIN,  // barillet = angle capteur ; armement si vitesse > 360°/s × 3 ticks consécutifs
+    SS_SPINNING,   // armé ; arrêt si vitesse < 10°/s × 10 ticks consécutifs (300 ms)
+    SS_SUSPENSE,   // arrêté ; 700 ms "CLIC..." avant le résultat
+    SS_RESULT,     // chambre vide : overlay 2200 ms puis round suivant
+    SS_DEAD,       // balle : toutes les balles révélées ; boutons REJOUER / MENU
+    SS_VICTORY     // 4 rounds survécus ; boutons REJOUER / MENU
+} SS_State_t;
 
 // API publique — appelée depuis main.cpp
-void SS_CreateScreen();  // crée tous les widgets LVGL ; ne charge PAS l'écran
-void SS_ShowScreen();    // réinitialise l'état du jeu, puis appelle lv_scr_load()
+void SS_ShowHome(void);
+     // init paresseuse des deux écrans, réinitialise l'état, charge scr_ss_home
 void SS_Update(float angleDeg, float speedDegPerSec);
      // appelée par myTask() toutes les 30 ms, déjà dans le contexte lvglLock
-
-// Drapeau positionné par main.cpp quand le bouton utilisateur est pressé
-extern bool ss_button_pressed;
+void SS_SetSensorError(bool visible);
+     // affiche/masque le label "CAPTEUR NON DETECTE" sur scr_ss_game
