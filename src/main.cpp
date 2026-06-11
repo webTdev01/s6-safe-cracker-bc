@@ -98,6 +98,28 @@ static void btn_spinSurvive_cb(lv_event_t * e) {
     SS_ShowHome();
 }
 
+// Callback d'animation : déplace la ligne de balayage verticalement sur l'écran menu
+static void menu_scan_y_cb(void *var, int32_t v) {
+    lv_obj_set_y((lv_obj_t *)var, v);
+}
+
+// Segments rectilignes suivis par les impulsions de données (pistes dorées du fond PCB)
+typedef struct { int32_t x0, y0, x1, y1; } MenuPulseSeg_t;
+static const MenuPulseSeg_t menu_pulse_segs[3] = {
+    {20, 28, 200, 70},
+    {466, 235, 330, 258},
+    {240, 6, 360, 60},
+};
+
+// Interpole la position du point le long de son segment (v : progression 0→256)
+static void menu_pulse_exec(lv_obj_t *dot, const MenuPulseSeg_t *s, int32_t v) {
+    lv_obj_set_pos(dot, s->x0 + (s->x1 - s->x0) * v / 256,
+                        s->y0 + (s->y1 - s->y0) * v / 256);
+}
+static void menu_pulse0_cb(void *var, int32_t v) { menu_pulse_exec((lv_obj_t *)var, &menu_pulse_segs[0], v); }
+static void menu_pulse1_cb(void *var, int32_t v) { menu_pulse_exec((lv_obj_t *)var, &menu_pulse_segs[1], v); }
+static void menu_pulse2_cb(void *var, int32_t v) { menu_pulse_exec((lv_obj_t *)var, &menu_pulse_segs[2], v); }
+
 // Crée l'écran de sélection des jeux (Safe Cracker / Spin & Survive).
 // Appelée une seule fois depuis mySetup() ; les boutons modifient activeGame puis chargent l'écran cible.
 void createMenuScreen() {
@@ -171,6 +193,50 @@ void createMenuScreen() {
     lv_image_set_src(logo, &logo_iut_96);
     lv_obj_remove_flag(logo, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_align(logo, LV_ALIGN_BOTTOM_RIGHT, -10, -6);
+
+    // Ligne de balayage : traverse l'écran de haut en bas en boucle (5 s)
+    lv_obj_t *scan = lv_obj_create(scr_menu);
+    lv_obj_set_size(scan, 480, 2);
+    lv_obj_set_pos(scan, 0, -2);
+    lv_obj_set_style_bg_color(scan, lv_color_hex(0xC8860A), 0);
+    lv_obj_set_style_bg_opa(scan, 60, 0);
+    lv_obj_set_style_border_width(scan, 0, 0);
+    lv_obj_set_style_radius(scan, 0, 0);
+    lv_obj_set_style_pad_all(scan, 0, 0);
+    lv_obj_remove_flag(scan, LV_OBJ_FLAG_CLICKABLE);
+    lv_anim_t a_scan;
+    lv_anim_init(&a_scan);
+    lv_anim_set_var(&a_scan, scan);
+    lv_anim_set_exec_cb(&a_scan, menu_scan_y_cb);
+    lv_anim_set_values(&a_scan, -2, 272);
+    lv_anim_set_duration(&a_scan, 5000);
+    lv_anim_set_path_cb(&a_scan, lv_anim_path_linear);
+    lv_anim_set_repeat_count(&a_scan, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_start(&a_scan);
+
+    // Impulsions de données : trois points circulant le long des pistes du fond
+    static const uint32_t pulse_durations[3] = {2600, 3400, 4200};
+    static const lv_anim_exec_xcb_t pulse_cbs[3] = {menu_pulse0_cb, menu_pulse1_cb, menu_pulse2_cb};
+    for (int i = 0; i < 3; i++) {
+        lv_obj_t *dot = lv_obj_create(scr_menu);
+        lv_obj_set_size(dot, 4, 4);
+        lv_obj_set_style_radius(dot, 2, 0);
+        lv_obj_set_style_bg_color(dot, lv_color_hex(0xC8860A), 0);
+        lv_obj_set_style_bg_opa(dot, 180, 0);
+        lv_obj_set_style_border_width(dot, 0, 0);
+        lv_obj_set_style_pad_all(dot, 0, 0);
+        lv_obj_remove_flag(dot, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_pos(dot, menu_pulse_segs[i].x0, menu_pulse_segs[i].y0);
+        lv_anim_t a_dot;
+        lv_anim_init(&a_dot);
+        lv_anim_set_var(&a_dot, dot);
+        lv_anim_set_exec_cb(&a_dot, pulse_cbs[i]);
+        lv_anim_set_values(&a_dot, 0, 256);
+        lv_anim_set_duration(&a_dot, pulse_durations[i]);
+        lv_anim_set_path_cb(&a_dot, lv_anim_path_linear);
+        lv_anim_set_repeat_count(&a_dot, LV_ANIM_REPEAT_INFINITE);
+        lv_anim_start(&a_dot);
+    }
 }
 
 // Génère trois angles secrets aléatoires espacés d'au moins 30° (distance circulaire)
