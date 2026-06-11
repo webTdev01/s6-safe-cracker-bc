@@ -2,47 +2,13 @@
 #include <Arduino.h>
 #include <math.h>
 #include "spinSurvive.h"
+#include "as5047d.h"
 #define USER_BTN_PIN PI_11
 
 typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
 ActiveGame_t activeGame = MENU;
 
 #define FONT14 &lv_font_montserrat_14
-
-#define AS5047P_CS       9
-#define AS5047P_MOSI     7
-#define AS5047P_MISO     8
-#define AS5047P_SCK      6
-#define AS5047P_NOP      0x0000
-#define AS5047P_ANGLECOM 0x3FFE
-
-static uint16_t softwareSPI_transfer16(uint16_t value) {
-    uint16_t out = 0;
-    for (int i = 15; i >= 0; i--) {
-        digitalWrite(AS5047P_MOSI, (value & (1 << i)) ? HIGH : LOW);
-        delayMicroseconds(5);
-        digitalWrite(AS5047P_SCK, HIGH);
-        delayMicroseconds(5);
-        digitalWrite(AS5047P_SCK, LOW);
-        delayMicroseconds(5);
-        if (digitalRead(AS5047P_MISO)) out |= (1 << i);
-    }
-    return out;
-}
-
-static uint16_t readAS5047P() {
-    uint16_t command = 0x4000 | AS5047P_ANGLECOM;
-    digitalWrite(AS5047P_CS, LOW);
-    delayMicroseconds(5);
-    softwareSPI_transfer16(command);
-    digitalWrite(AS5047P_CS, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(AS5047P_CS, LOW);
-    delayMicroseconds(5);
-    uint16_t response = softwareSPI_transfer16(AS5047P_NOP);
-    digitalWrite(AS5047P_CS, HIGH);
-    return (response & 0x3FFF);
-}
 
 static lv_obj_t *scr_safeCracker   = NULL;
 static float    ss_prev_angle = 0.0f;
@@ -818,21 +784,15 @@ void createSafeCrackerScreen() {
 
 void mySetup() {
     Serial.begin(115200);
-    pinMode(AS5047P_CS,   OUTPUT);
-    pinMode(AS5047P_SCK,  OUTPUT);
-    pinMode(AS5047P_MOSI, OUTPUT);
-    pinMode(AS5047P_MISO, INPUT_PULLUP);
-    digitalWrite(AS5047P_CS,  HIGH);
-    digitalWrite(AS5047P_SCK, LOW);
-    delay(10);
+    AS5047D_Init();
     uint8_t stuck_count = 0;
     for (int i = 0; i < 5; i++) {
         delay(2);
-        if (readAS5047P() == 0x3FFF) stuck_count++;
+        if (AS5047D_ReadRaw() == 0x3FFF) stuck_count++;
     }
     sensor_ok = (stuck_count < 5);
     const char *sensor_status = sensor_ok ? "OK" : "FAIL";
-    static char boot_l2[80], boot_l3[120], boot_l4[160], boot_l5[200], boot_l6[220];
+    static char boot_l2[80], boot_l3[120], boot_l4[160], boot_l5[200];
     snprintf(boot_l2, sizeof(boot_l2), "SAFE CRACKER v1.0\n> INIT SYSTEME.............. OK\n> CAPTEUR AS5047D........... %s\n", sensor_status);
     snprintf(boot_l3, sizeof(boot_l3), "%s> GENERATION COMBINAISON.... OK\n", boot_l2);
     snprintf(boot_l4, sizeof(boot_l4), "%s> INTERFACE LVGL............. OK\n", boot_l3);
@@ -856,15 +816,15 @@ void myTask(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1) {
         if (activeGame == SAFE_CRACKER) {
-            uint16_t raw = readAS5047P();
-            int32_t  val = (int32_t)(raw * 360.0f / 16384.0f);
+            uint16_t raw = AS5047D_ReadRaw();
+            int32_t  val = (int32_t)AS5047D_RawToDeg(raw);
 
             // Robust sensor detection: read 8x raw, all must be exactly 0x3FFF to flag absent
             // A real sensor at 359 deg has LSB noise -> never 8/8 identical at 16383
             static uint8_t absent_cycles = 0;
             uint8_t max_count = 0;
             for (int i = 0; i < 8; i++) {
-                if (readAS5047P() == 0x3FFF) max_count++;
+                if (AS5047D_ReadRaw() == 0x3FFF) max_count++;
             }
             bool reading_absent = (max_count == 8);
 
@@ -886,8 +846,8 @@ void myTask(void *pvParameters) {
                 if (sensor_ok) updateGame(val);
             lvglUnlock();
         } else if (activeGame == SPIN_SURVIVE) {
-            uint16_t raw = readAS5047P();
-            float cur_angle = raw * 360.0f / 16384.0f;
+            uint16_t raw = AS5047D_ReadRaw();
+            float cur_angle = AS5047D_RawToDeg(raw);
             uint32_t now   = millis();
             uint32_t dt_ms = now - ss_prev_time;
             if (dt_ms == 0) dt_ms = 1;
