@@ -15,8 +15,6 @@
 #include <math.h>
 #include "spinSurvive.h"
 #include "as5047d.h"
-#define USER_BTN_PIN PI_11
-
 typedef enum { MENU, SAFE_CRACKER, SPIN_SURVIVE } ActiveGame_t;
 ActiveGame_t activeGame = MENU;
 
@@ -97,7 +95,7 @@ static void btn_safeCracker_cb(lv_event_t * e) {
 
 static void btn_spinSurvive_cb(lv_event_t * e) {
     activeGame = SPIN_SURVIVE;
-    SS_ShowScreen();
+    SS_ShowHome();
 }
 
 // Crée l'écran de sélection des jeux (Safe Cracker / Spin & Survive).
@@ -914,9 +912,6 @@ void myTask(void *pvParameters) {
             ss_curr_speed  = fabsf(delta) / (dt_ms / 1000.0f);
             ss_prev_angle  = cur_angle;
             ss_prev_time   = now;
-            if (digitalRead(USER_BTN_PIN) == HIGH) {
-                ss_button_pressed = true;
-            }
             lvglLock(portMAX_DELAY);
                 SS_Update(cur_angle, ss_curr_speed);
             lvglUnlock();
