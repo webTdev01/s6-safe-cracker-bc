@@ -903,6 +903,26 @@ void myTask(void *pvParameters) {
         } else if (activeGame == SPIN_SURVIVE) {
             uint16_t raw = AS5047D_ReadRaw();
             float cur_angle = AS5047D_RawToDeg(raw);
+
+            // Détection absence capteur (même heuristique que SAFE_CRACKER)
+            // 1 lecture réutilisée + 7 nouvelles = 8 au total ; 0x3FFF × 8 = capteur absent
+            static uint8_t ss_absent_cycles = 0;
+            static bool    ss_sensor_was_ok = true;
+            uint8_t max_count = (raw == 0x3FFF) ? 1 : 0;
+            for (int i = 0; i < 7; i++) {
+                if (AS5047D_ReadRaw() == 0x3FFF) max_count++;
+            }
+            bool reading_absent = (max_count == 8);
+            if (reading_absent) { if (ss_absent_cycles < 3) ss_absent_cycles++; }
+            else                { ss_absent_cycles = 0; }
+            bool ss_sensor_ok = (ss_absent_cycles < 3);
+            if (ss_sensor_ok != ss_sensor_was_ok) {
+                ss_sensor_was_ok = ss_sensor_ok;
+                lvglLock(portMAX_DELAY);
+                    SS_SetSensorError(!ss_sensor_ok);
+                lvglUnlock();
+            }
+
             uint32_t now   = millis();
             uint32_t dt_ms = now - ss_prev_time;
             if (dt_ms == 0) dt_ms = 1;
@@ -913,7 +933,7 @@ void myTask(void *pvParameters) {
             ss_prev_angle  = cur_angle;
             ss_prev_time   = now;
             lvglLock(portMAX_DELAY);
-                SS_Update(cur_angle, ss_curr_speed);
+                if (ss_sensor_ok) SS_Update(cur_angle, ss_curr_speed);
             lvglUnlock();
         }
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(30));
