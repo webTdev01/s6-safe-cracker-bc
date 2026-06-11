@@ -107,16 +107,36 @@ void createMenuScreen() {
     lv_obj_set_style_pad_all(scr_menu, 0, 0);
     lv_obj_remove_flag(scr_menu, LV_OBJ_FLAG_SCROLLABLE);
 
+    // Image de fond PCB : premier enfant créé → tous les widgets suivants se dessinent au-dessus
+    LV_IMAGE_DECLARE(bg_menu);
+    lv_obj_t *bg = lv_image_create(scr_menu);
+    lv_image_set_src(bg, &bg_menu);
+    lv_obj_set_pos(bg, 0, 0);
+    lv_obj_remove_flag(bg, LV_OBJ_FLAG_CLICKABLE);
+
     lv_obj_t *title = lv_label_create(scr_menu);
     lv_label_set_text(title, "SELECT GAME");
     lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(title, lv_color_hex(0xE0E0E0), 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xC8860A), 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 20);
+
+    lv_obj_t *title_underline = lv_obj_create(scr_menu);
+    lv_obj_set_size(title_underline, 120, 2);
+    lv_obj_align(title_underline, LV_ALIGN_TOP_MID, 0, 42);
+    lv_obj_set_style_bg_color(title_underline, lv_color_hex(0x8B6914), 0);
+    lv_obj_set_style_border_width(title_underline, 0, 0);
+    lv_obj_set_style_radius(title_underline, 0, 0);
+    lv_obj_set_style_pad_all(title_underline, 0, 0);
 
     lv_obj_t *btn1 = lv_button_create(scr_menu);
     lv_obj_set_size(btn1, 180, 80);
     lv_obj_align(btn1, LV_ALIGN_LEFT_MID, 30, 0);
     lv_obj_set_style_bg_color(btn1, lv_color_hex(0x2D6A4F), 0);
+    lv_obj_set_style_bg_opa(btn1, LV_OPA_90, 0);
+    lv_obj_set_style_border_color(btn1, lv_color_hex(0xC8860A), 0);
+    lv_obj_set_style_border_width(btn1, 1, 0);
+    lv_obj_set_style_radius(btn1, 0, 0);
+    lv_obj_set_style_shadow_width(btn1, 0, 0);
     lv_obj_add_event_cb(btn1, btn_safeCracker_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *lbl1 = lv_label_create(btn1);
     lv_label_set_text(lbl1, "SAFE\nCRACKER");
@@ -128,6 +148,11 @@ void createMenuScreen() {
     lv_obj_set_size(btn2, 180, 80);
     lv_obj_align(btn2, LV_ALIGN_RIGHT_MID, -30, 0);
     lv_obj_set_style_bg_color(btn2, lv_color_hex(0x7B2D2D), 0);
+    lv_obj_set_style_bg_opa(btn2, LV_OPA_90, 0);
+    lv_obj_set_style_border_color(btn2, lv_color_hex(0x888888), 0);
+    lv_obj_set_style_border_width(btn2, 1, 0);
+    lv_obj_set_style_radius(btn2, 0, 0);
+    lv_obj_set_style_shadow_width(btn2, 0, 0);
     lv_obj_add_event_cb(btn2, btn_spinSurvive_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_t *lbl2 = lv_label_create(btn2);
     lv_label_set_text(lbl2, "SPIN &\nSURVIVE");
