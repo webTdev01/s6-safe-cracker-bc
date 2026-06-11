@@ -1,3 +1,15 @@
+// Projet Safe Cracker — jeu de combinaison sur STM32F746NG-DISCO
+// Carte : STM32F746NG-DISCO (LCD 480×272, FT5336 touch)
+// Stack : PlatformIO + Arduino + FreeRTOS + LVGL v9.2.2 + SPI bit-bang AS5047D
+// Auteur : [étudiant]  |  Date : 2026
+//
+// Architecture FreeRTOS : deux tâches
+//   lvglTask : boucle LVGL (renderer, gestion des events/timers/animations)
+//   myTask   : lecture capteur toutes les 30 ms, mise à jour jeu avec lvglLock
+//
+// Règle LVGL thread-safety :
+//   Tout appel LVGL depuis myTask() doit être encadré lvglLock/lvglUnlock.
+//   Les callbacks LVGL (event, timer, anim) tournent dans lvglTask → pas de lock dedans.
 #include "lvgl.h"
 #include <Arduino.h>
 #include <math.h>
@@ -88,6 +100,8 @@ static void btn_spinSurvive_cb(lv_event_t * e) {
     SS_ShowScreen();
 }
 
+// Crée l'écran de sélection des jeux (Safe Cracker / Spin & Survive).
+// Appelée une seule fois depuis mySetup() ; les boutons modifient activeGame puis chargent l'écran cible.
 void createMenuScreen() {
     scr_menu = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr_menu, lv_color_hex(0x1A1A2E), 0);
@@ -124,6 +138,8 @@ void createMenuScreen() {
     lv_obj_center(lbl2);
 }
 
+// Génère trois angles secrets aléatoires espacés d'au moins 30° (distance circulaire)
+// et réinitialise tous les widgets de jeu à leur état verrouillé initial.
 void generateNewGame() {
     for (int slot = 0; slot < 3; slot++) {
         int32_t candidate;
@@ -170,6 +186,13 @@ void generateNewGame() {
         if (v_cell_bg[i]) lv_obj_set_style_opa(v_cell_bg[i], 0, 0);
 }
 
+// Met à jour l'affichage du cadran et la logique de jeu à chaque tick (30 ms).
+// Trois zones de feedback selon la distance circulaire à l'angle cible :
+//   distance > CLOSE_DEG (30°) : fond gris, statut "VERROUILLE"
+//   distance < CLOSE_DEG (30°) : fond orange, statut "APPROCHE..."
+//   distance < TOLERANCE_DEG (10°) : fond vert, statut "MAINTENEZ !" + compteur hold_timer
+// Quand hold_timer dépasse 50 ticks (~1,5 s), l'angle est validé.
+// Appelée uniquement depuis myTask() à l'intérieur de lvglLock.
 void updateGame(int32_t val) {
     lv_arc_set_value(arc_cadran, val);
     float rad = val * (float)M_PI / 180.0f;
@@ -241,12 +264,15 @@ void updateGame(int32_t val) {
     }
 }
 
+// Callback d'animation LVGL : met à jour la valeur de l'arc de l'écran d'accueil (pulsation décorative)
 static void home_arc_pulse_cb(void *var, int32_t v) {
     lv_arc_set_value((lv_obj_t *)var, v);
 }
 
 static const char *boot_lines[6];
 
+// Timer callback LVGL : avance la séquence de démarrage ligne par ligne (6 lignes, 600 ms chacune).
+// À la dernière ligne, supprime le timer et charge l'écran d'accueil avec fondu.
 static void boot_timer_cb(lv_timer_t *t) {
     boot_step++;
     if (boot_step < 6) {
@@ -264,6 +290,8 @@ static void startBootSequence(void) {
     lv_timer_create(boot_timer_cb, 600, NULL);
 }
 
+// Crée l'écran de démarrage style terminal (fond noir, texte vert phosphore).
+// Les messages boot_lines[] sont remplis dans mySetup() après détection du capteur.
 void createBootScreen() {
     if (!screen_boot) {
         screen_boot = lv_obj_create(NULL);
@@ -281,6 +309,7 @@ void createBootScreen() {
     lv_obj_align(boot_label, LV_ALIGN_TOP_LEFT, 20, 20);
 }
 
+// Crée l'écran d'accueil du jeu Safe Cracker (titre, arc décoratif animé, bouton NOUVELLE PARTIE).
 void createHomeScreen() {
     screen_home = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen_home, lv_color_hex(0x0e0e0e), 0);
@@ -407,6 +436,8 @@ void createHomeScreen() {
     lv_obj_align(serial, LV_ALIGN_BOTTOM_RIGHT, -12, -10);
 }
 
+// Crée l'écran de jeu principal : cadran arc 360°, aiguille, dashboard droite
+// avec barres de proximité/maintien, LED, étiquettes d'état et combinaison.
 void createGameScreen() {
     screen_game = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen_game, lv_color_hex(0x0e0e0e), 0);
@@ -645,6 +676,8 @@ static void show_btn_home_cb(lv_timer_t *t) {
     lv_timer_delete(t);
 }
 
+// Lance l'animation de victoire sur screen_victory : flash blanc, apparition titre/sous-titre/cellules,
+// puis affichage des boutons "REJOUER" et "ACCUEIL". Utilise une anim_timeline LVGL v9.
 void playVictoryAnimation() {
     lv_anim_timeline_t *tl = lv_anim_timeline_create();
     lv_anim_t a;
@@ -688,6 +721,8 @@ void playVictoryAnimation() {
     lv_timer_create(show_btn_home_cb, 2400, NULL);
 }
 
+// Crée l'écran de victoire : fond noir, titre "OUVERT", cellules affichant la combinaison trouvée,
+// flash blanc et boutons "REJOUER" / "ACCUEIL" (initialement masqués, révélés par l'animation).
 void createVictoryScreen() {
     screen_victory = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen_victory, lv_color_hex(0x0c0800), 0);
@@ -781,6 +816,8 @@ void createVictoryScreen() {
     lv_obj_add_flag(v_btn_home, LV_OBJ_FLAG_HIDDEN);
 }
 
+// Initialise tous les écrans du jeu Safe Cracker dans l'ordre requis,
+// génère la première combinaison et affiche lbl_sensor_error si le capteur est absent.
 void createSafeCrackerScreen() {
     createBootScreen();
     scr_safeCracker = screen_boot;
@@ -793,6 +830,9 @@ void createSafeCrackerScreen() {
 #ifdef ARDUINO
 #include "lvglDrivers.h"
 
+// Point d'entrée de l'application (équivalent setup() Arduino, appelé par lvglDrivers.h).
+// Initialise le capteur, construit les messages de boot, crée tous les écrans LVGL
+// et charge l'écran menu. LVGL est déjà initialisé avant cet appel.
 void mySetup() {
     Serial.begin(115200);
     AS5047D_Init();
@@ -823,6 +863,12 @@ void mySetup() {
 
 void loop() {}
 
+// Tâche FreeRTOS principale : lit le capteur AS5047D toutes les 30 ms et met à jour le jeu actif.
+// Règle de verrouillage : tout appel LVGL est encadré de lvglLock/lvglUnlock.
+// Heuristique d'absence capteur (SAFE_CRACKER) :
+//   8 lectures brutes consécutives à exactement 0x3FFF = capteur absent ou déconnecté.
+//   Un vrai capteur à 359° présente du bruit LSB → jamais 8/8 lectures identiques à 16383.
+//   Debounce : 3 cycles confirmant l'état (~90 ms) avant de changer sensor_ok.
 void myTask(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     while (1) {
