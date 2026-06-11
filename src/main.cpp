@@ -159,6 +159,18 @@ void createMenuScreen() {
     lv_obj_set_style_text_font(lbl2, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_align(lbl2, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_center(lbl2);
+
+    lv_obj_t *id_lbl = lv_label_create(scr_menu);
+    lv_label_set_text(id_lbl, "Bari CIMSIT\nIUT de Cachan - S6 Interfacage");
+    lv_obj_set_style_text_font(id_lbl, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(id_lbl, lv_color_hex(0xE0E0E0), 0);
+    lv_obj_align(id_lbl, LV_ALIGN_BOTTOM_LEFT, 12, -8);
+
+    LV_IMAGE_DECLARE(logo_iut_96);
+    lv_obj_t *logo = lv_image_create(scr_menu);
+    lv_image_set_src(logo, &logo_iut_96);
+    lv_obj_remove_flag(logo, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_align(logo, LV_ALIGN_BOTTOM_RIGHT, -10, -6);
 }
 
 // Génère trois angles secrets aléatoires espacés d'au moins 30° (distance circulaire)
